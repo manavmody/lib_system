@@ -13,7 +13,6 @@ app = Flask(__name__)
 CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root''@localhost/lib_members'
 app.config['SQLALCHEMY_BINDS'] = {'database2': 'mysql://root''@localhost/books'}
-app.config['SQLALCHEMY_BINDS'] = {'database3': 'mysql://root''@localhost/transactions'}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db1=SQLAlchemy(app)
@@ -25,7 +24,7 @@ class Members(db1.Model):
 	name = db1.Column(db1.String(100))
 	description = db1.Column(db1.String(100))
 	date = db1.Column(db1.DateTime, default = x)
-	issued_book_id = db1.Column(db1.Integer, db1.ForeignKey('book.id'), nullable=True)
+	# issued_book_id = db1.Column(db1.Integer, db1.ForeignKey('book.id'), nullable=True)
 
 	def __init__(self,name,description):
 		self.name = name
@@ -44,7 +43,7 @@ class Books(db1.Model):
 	author = db1.Column(db1.String(100))
 	stock = db1.Column(db1.Integer)
 	date = db1.Column(db1.DateTime, default = x)
-	issued_to = db1.relationship('Members',backref='transactions',lazy=True)
+	# issued_to = db1.relationship('Members',backref='transactions',lazy=True)
 	
 
 	def __init__(self,title,author,stock):
@@ -60,26 +59,6 @@ class BookSchema(ma1.Schema):
 book_schema = BookSchema()
 books_schema = BookSchema(many=True)
 
-class Transactions(db1.Model):
-	id = db1.Column(db1.Integer, primary_key=True)
-	book_id = db1.Column(db1.Integer,db1.ForeignKey('books.id'))
-	member_id = db1.Column(db1.Integer, db1.ForeignKey('members.id'), nullable=False)
-	issue_date = db1.Column(db1.DateTime, nullable=False, default=x)
-	return_date = db1.Column(db1.DateTime, nullable=True)
-    
-
-	# def __init__(self,title,author,stock):
-	# 	self.title= title
-	# 	self.author = author
-	# 	self.stock = stock
-	__bind_key__ = 'database3'
-
-class TransactionSchema(ma1.Schema):
-	class Meta:
-		fields= ('id','book_id','member_id','issue_date','return_date')
-
-transaction_schema = TransactionSchema()
-transactions_schema = TransactionSchema(many=True)
 
 
 # Route for CRUD of members
@@ -186,21 +165,7 @@ def delete_book(id):
 
 	return book_schema.jsonify(book)
 
-@app.route('/issue_book', methods=['POST'])
-def issue_book():
-    data = request.get_json()
-    book_id = data['book_id']
-    member_id = data['member_id']
-    book = Books.query.get(book_id)
-    member = Members.query.get(member_id)
-    if book and member:
-        issued_book = Transactions(book_id=book.id, member_id=member.id)
-        db1.session.add(issued_book)
-        book.issued_to.append(member)
-        db1.session.commit()
-        return 'Book issued successfully'
-    else:
-        return 'Invalid book or member ID'
+
 
 with app.app_context():
     db1.create_all()	
