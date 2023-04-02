@@ -162,7 +162,7 @@ def delete_book(id):
 	book = Books.query.get(id)
 	db1.session.delete(book)
 	db1.session.commit()
-
+	#for deleting custom books
 	return book_schema.jsonify(book)
 
 
